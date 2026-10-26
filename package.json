@@ -1,0 +1,13 @@
+{
+  "name": "maxed-out",
+  "version": "0.1.0",
+  "description": "A browser tower defence game inspired by account builds. Unofficial, non-commercial fan project.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node scripts/check.mjs && node --test \"tests/*.test.mjs\"",
+    "balance": "node scripts/balance.mjs"
+  }
+}

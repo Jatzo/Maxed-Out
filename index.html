@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maxed Out</title>
+  <meta name="description" content="A tower defence game about maxed accounts, drawn entirely in code. Unofficial fan project.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-mode="menu">
+  <div id="file-notice" class="card file-notice" hidden>
+    <h1>Maxed Out</h1>
+    <p>Open this through a local server: run npm start, then visit http://localhost:5173.</p>
+  </div>
+  <div class="app" id="app">
+    <main class="stage">
+      <canvas id="game" width="960" height="640" aria-label="The game board: a map with a winding path, towers beside it and enemies walking towards a castle"></canvas>
+    </main>
+    <aside class="panel" id="panel" aria-label="Controls"></aside>
+  </div>
+  <footer class="footer">
+    <p>Unofficial fan project. Not affiliated with or endorsed by Jagex Ltd.</p>
+  </footer>
+  <div id="overlay" class="overlay" hidden></div>
+  <script>
+    // Modules and workers do not load from file://, so say so plainly instead of failing quietly.
+    if (location.protocol === 'file:') {
+      document.getElementById('file-notice').hidden = false;
+      document.getElementById('app').hidden = true;
+    } else {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'src/main.js';
+      document.body.append(script);
+    }
+  </script>
+</body>
+</html>
