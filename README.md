@@ -6,7 +6,7 @@
 
 <img src="docs/demo.gif" alt="Wave 20 at four times speed: a blue dragon slowed by a frost volley while hitsplats land on giants and knights" width="720">
 
-[Play it](#play-it) · [The towers](#the-towers) · [Watch it learn](#watch-it-learn) · [How it is built](#how-it-is-built)
+**[Play it in your browser](https://jatzo.github.io/Maxed-Out/)** · [Run it locally](#play-it) · [The towers](#the-towers) · [Watch it learn](#watch-it-learn) · [How it is built](#how-it-is-built)
 
 </div>
 
@@ -16,7 +16,7 @@ Build a level 70 pure, a ranger, a mage, a tank, a zerker, a flipper and three m
 
 ## Play it
 
-You need Node.js 22 or later. There is nothing to install.
+The quickest way is in your browser at [jatzo.github.io/Maxed-Out](https://jatzo.github.io/Maxed-Out/). To run it locally you need Node.js 22 or later, and there is nothing to install.
 
 ```
 npm start
