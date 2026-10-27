@@ -4,11 +4,11 @@ import { drawText, wrapText } from '../render/font.js';
 import { towerSprite, drawEnemy, TOWER_SPRITE } from '../render/sprites.js';
 
 const SHEET_WIDTH = 1440;
-const SHEET_HEIGHT = 1600;
+const SHEET_HEIGHT = 1760;
 
 const LABEL_WIDTH = 100;
 const CELL_WIDTH = 148;
-const TOWER_ROW_HEIGHT = 170;
+const TOWER_ROW_HEIGHT = 190;
 const ENEMY_ROW_HEIGHT = 150;
 const DRAGON_ROW_HEIGHT = 124;
 // A fixed instant, chosen so the warded pulse is bright and the frost glint is showing.
@@ -52,10 +52,10 @@ export function drawSheet(canvas) {
       const top = 62 + row * TOWER_ROW_HEIGHT;
       const sprite = towerSprite(type, row, false);
       ctx.drawImage(sprite, cellX - TOWER_SPRITE.width, top, TOWER_SPRITE.width * 2, TOWER_SPRITE.height * 2);
-      wrapText(tier.name, 11).forEach((line, index) => centred(ctx, line, cellX, top + 94 + index * 16, '#c8b48a'));
+      wrapText(tier.name, 11).forEach((line, index) => centred(ctx, line, cellX, top + TOWER_SPRITE.height * 2 + 6 + index * 16, '#c8b48a'));
     });
   });
-  for (let row = 0; row < 4; row++) drawText(ctx, `Tier ${row}`, 8, 62 + row * TOWER_ROW_HEIGHT + 36, { colour: '#c8b48a' });
+  for (let row = 0; row < 4; row++) drawText(ctx, `Tier ${row}`, 8, 62 + row * TOWER_ROW_HEIGHT + TOWER_SPRITE.height, { colour: '#c8b48a' });
 
   const enemiesTop = 62 + 4 * TOWER_ROW_HEIGHT + 8;
   heading(ctx, 'Enemies', enemiesTop);

@@ -129,7 +129,6 @@ canvas {
 }
 .shop-item:hover { background: #5a4830; }
 .shop-item[aria-pressed="true"] { background: #6a5436; border-color: var(--gold); }
-.shop-item canvas { width: 48px; height: 44px; }
 .shop-name { font-size: 0.875rem; font-weight: 600; line-height: 1.2; }
 .shop-cost { font-size: 0.8125rem; color: var(--gold); }
 .shop-key {

@@ -7,8 +7,9 @@ import { TOWERS, ENEMIES } from '../core/data.js';
 const SCALE = 2;
 const INK = '#1a1410';
 
-// Towers: the 16 x 18 character sits inside a buffer with room for weapons and an outline.
-const TOWER_BUFFER = { width: 24, height: 22, originX: 4, originY: 2 };
+// Towers: the 16 x 18 character sits inside a 32 x 26 buffer, centred across its width, with room for oversized
+// weapons and two outline rings. originX is always width / 2 - 8 so drawTower can centre on the buffer.
+const TOWER_BUFFER = { width: 32, height: 26, originX: 8, originY: 4 };
 
 // Enemies keep three pixels of margin: one for the outline and two for the warded ring.
 const ENEMY_MARGIN = 3;
@@ -165,83 +166,173 @@ const HEADS = {
   ],
 };
 
-const SWORD_THRUST = [['m', 13, 10, 5, 1], ['n', 18, 10, 1, 1], ['a', 12, 9, 1, 3]];
-const SWORD_BIG = [['m', 13, 2, 2, 9], ['n', 13, 2, 1, 9], ['n', 13, 1, 1, 1], ['a', 11, 11, 5, 1], ['B', 13, 12, 1, 2], ['a', 13, 14, 1, 1]];
-const SHIELD = [['m', 0, 9, 4, 1], ['m', 0, 14, 4, 1], ['m', 0, 9, 1, 6], ['m', 3, 9, 1, 6], ['s', 1, 10, 2, 4], ['a', 1, 11, 2, 2]];
-const DEFENDER = [['s', 1, 10, 3, 4], ['m', 1, 10, 3, 1], ['m', 1, 13, 3, 1], ['a', 2, 11, 1, 2]];
-const STAFF_ORB = [['b', 13, 4, 1, 9], ['m', 12, 4, 3, 1], ['a', 12, 2, 3, 1], ['a', 13, 1, 1, 3], ['w', 13, 2, 1, 1]];
-const STAFF = [['b', 13, 3, 1, 10], ['m', 12, 2, 3, 1], ['a', 13, 1, 1, 1]];
-const BOW = [['b', 14, 5, 1, 1], ['b', 15, 6, 1, 6], ['b', 14, 12, 1, 1]];
-const LONGBOW = [['b', 14, 2, 1, 1], ['b', 15, 3, 1, 1], ['b', 16, 4, 1, 9], ['b', 15, 13, 1, 1], ['b', 14, 14, 1, 1]];
-const GREATBOW = [
-  ['m', 14, 0, 1, 1], ['b', 15, 1, 1, 2], ['b', 16, 3, 1, 10], ['b', 15, 13, 1, 2], ['m', 14, 15, 1, 1], ['a', 16, 7, 1, 3],
-];
-const CROSSBOW = [['b', 11, 11, 5, 2], ['M', 15, 8, 1, 7], ['m', 15, 8, 1, 1], ['m', 15, 14, 1, 1]];
-const SCYTHE = [['b', 14, 2, 1, 12], ['m', 10, 1, 5, 1], ['m', 9, 2, 2, 1], ['n', 9, 3, 1, 1], ['n', 10, 1, 3, 1]];
-const AXE = [['b', 13, 3, 1, 10], ['m', 14, 2, 3, 4], ['n', 16, 2, 1, 4], ['M', 14, 5, 3, 1]];
-const SACK = [['B', 13, 10, 3, 3], ['b', 13, 11, 3, 2], ['m', 13, 9, 3, 1], ['m', 14, 11, 1, 1]];
+// Weapons are coloured from the tier's blade colour (its armour metal unless the tier sets one): l is the blade,
+// L its shadow and i a light edge, so even a near-black blade stands out against the outline. Staves use the blade
+// colour for their orb and bows for their wood. Weapons are drawn oversized, as the characters are tiny, and every
+// pixel must stay inside WEAPON_SAFE_AREA: a tier 3 tower draws two outline rings and the frame ends there.
+export const WEAPON_SAFE_AREA = { left: -6, right: 21, top: -2, bottom: 19 };
 
-// Each weapon has a resting pose and a swung or cast pose, shown while attackAnim is under 0.15 seconds.
-const WEAPONS = {
-  sabre: {
-    idle: [['m', 13, 4, 1, 8], ['n', 13, 3, 1, 2], ['a', 12, 11, 3, 1], ['B', 13, 12, 1, 1]],
-    attack: [...SWORD_THRUST, ['B', 12, 12, 1, 1]],
-  },
-  maul: {
-    idle: [['b', 13, 3, 1, 10], ['M', 10, 1, 6, 4], ['m', 11, 1, 4, 3], ['n', 11, 1, 4, 1]],
-    attack: [['b', 13, 12, 1, 1], ['b', 14, 11, 1, 1], ['b', 15, 10, 1, 1], ['b', 16, 9, 1, 1], ['M', 15, 5, 4, 5], ['m', 16, 5, 2, 4], ['n', 16, 5, 2, 1]],
-  },
-  bow: {
-    idle: [...BOW, ['w', 14, 6, 1, 6]],
-    attack: [...BOW, ['w', 14, 6, 1, 3], ['w', 13, 9, 1, 1], ['w', 14, 10, 1, 2], ['B', 13, 9, 4, 1], ['m', 17, 9, 1, 1]],
-  },
-  longbow: {
-    idle: [...LONGBOW, ['w', 15, 4, 1, 9]],
-    attack: [...LONGBOW, ['w', 14, 5, 1, 3], ['w', 13, 8, 1, 1], ['w', 14, 9, 1, 4], ['B', 13, 8, 5, 1], ['m', 18, 8, 1, 1]],
-  },
-  crossbow: {
-    idle: [...CROSSBOW, ['w', 14, 9, 1, 5]],
-    attack: [...CROSSBOW, ['w', 14, 9, 1, 5], ['n', 16, 11, 2, 1]],
-  },
-  greatbow: {
-    idle: [...GREATBOW, ['w', 14, 1, 1, 14]],
-    attack: [...GREATBOW, ['w', 14, 1, 1, 7], ['w', 13, 8, 1, 1], ['w', 14, 9, 1, 6], ['B', 13, 8, 4, 1], ['m', 17, 8, 1, 1]],
-  },
-  staff: {
-    idle: STAFF,
-    attack: [...shift(STAFF, 0, -1), ['w', 11, 1, 1, 1], ['w', 15, 1, 1, 1], ['w', 13, 0, 1, 1]],
-  },
-  'staff-orb': {
-    idle: STAFF_ORB,
-    attack: [...shift(STAFF_ORB, 0, -1), ['w', 11, 0, 1, 1], ['w', 15, 0, 1, 1], ['w', 11, 2, 1, 1], ['w', 15, 2, 1, 1]],
-  },
-  'sword-shield': {
-    idle: [...SHIELD, ['m', 13, 6, 1, 6], ['n', 13, 5, 1, 1], ['a', 12, 11, 3, 1], ['B', 13, 12, 1, 1]],
-    attack: [...SHIELD, ...SWORD_THRUST, ['B', 12, 12, 1, 1]],
-  },
-  sword: {
-    idle: SWORD_BIG,
-    attack: [['m', 13, 9, 5, 2], ['n', 13, 9, 5, 1], ['n', 18, 10, 1, 1], ['a', 12, 8, 1, 5], ['B', 11, 10, 1, 1]],
-  },
-  'sword-defender': {
-    idle: [...DEFENDER, ...SWORD_BIG],
-    attack: [...DEFENDER, ['m', 13, 9, 5, 2], ['n', 13, 9, 5, 1], ['n', 18, 10, 1, 1], ['a', 12, 8, 1, 5]],
-  },
-  whip: {
-    idle: [['B', 13, 11, 1, 2], ['m', 14, 10, 1, 1], ['m', 15, 9, 1, 1], ['m', 15, 8, 1, 1], ['m', 14, 7, 1, 1], ['m', 13, 6, 1, 1], ['a', 12, 6, 1, 1]],
-    attack: [['B', 13, 11, 1, 2], ['m', 14, 10, 3, 1], ['m', 17, 9, 1, 1], ['a', 18, 8, 1, 1]],
-  },
-  scythe: {
-    idle: SCYTHE,
-    attack: [...shift(SCYTHE, 1, 1), ['w', 16, 4, 1, 3], ['w', 17, 7, 1, 3]],
-  },
-  axe: {
-    idle: AXE,
-    attack: [...shift(AXE, 2, 1), ['a', 16, 1, 1, 1], ['a', 17, 0, 1, 1]],
-  },
+const SCIMITAR = [
+  ['B', 13, 11, 1, 3], ['G', 12, 10, 3, 1],
+  ['l', 13, 7, 2, 3], ['i', 14, 7, 1, 3], ['l', 14, 4, 2, 3], ['i', 15, 4, 1, 3], ['l', 15, 2, 3, 2], ['i', 17, 2, 1, 2], ['l', 17, 1, 1, 1],
+];
+const SCIMITAR_SLASH = [
+  ['B', 12, 11, 1, 3], ['G', 13, 9, 1, 3], ['l', 14, 10, 4, 2], ['i', 14, 10, 4, 1], ['l', 18, 9, 2, 2], ['i', 18, 9, 2, 1], ['l', 20, 8, 1, 1],
+];
+// The same curved blade with a hook curling back off the tip.
+const HOOK = [['l', 18, 2, 1, 2], ['l', 17, 0, 1, 1], ['i', 16, 1, 1, 1]];
+const HOOK_SLASH = [['l', 20, 10, 1, 2], ['l', 21, 8, 1, 1]];
+
+const STONE_MAUL = [['b', 13, 4, 1, 12], ['L', 10, -1, 8, 5], ['l', 11, -1, 6, 4], ['i', 11, -1, 6, 1], ['L', 13, 3, 2, 1]];
+const STONE_MAUL_SMASH = [
+  ['b', 13, 11, 1, 1], ['b', 14, 10, 1, 1], ['b', 15, 9, 1, 1], ['b', 16, 8, 1, 1],
+  ['L', 16, 3, 6, 6], ['l', 17, 3, 4, 5], ['i', 17, 3, 4, 1],
+];
+
+const LONGSWORD = [['B', 13, 12, 1, 3], ['G', 11, 11, 5, 1], ['l', 13, 3, 2, 8], ['i', 13, 3, 1, 8], ['l', 13, 2, 1, 1]];
+const LONGSWORD_THRUST = [['B', 11, 10, 2, 1], ['G', 13, 8, 1, 5], ['l', 14, 9, 6, 2], ['i', 14, 9, 6, 1], ['l', 20, 10, 1, 1]];
+
+// An off-hand blade with spikes along its back, held in the left hand.
+const PARRYING_BLADE = [
+  ['v', 1, 12, 2, 2], ['R', 0, 7, 2, 5], ['R', -1, 6, 1, 2], ['O', 1, 8, 1, 3], ['R', -1, 9, 1, 1], ['R', -1, 11, 1, 1], ['R', 2, 9, 1, 2],
+];
+// A round black shield with an orange rim and glowing marks.
+const ROUND_SHIELD = [
+  ['v', -3, 7, 4, 1], ['v', -4, 8, 6, 6], ['v', -3, 14, 4, 1],
+  ['O', -3, 7, 4, 1], ['O', -4, 8, 1, 6], ['O', 1, 8, 1, 6], ['O', -3, 14, 4, 1],
+  ['O', -2, 10, 1, 1], ['O', -1, 9, 1, 3], ['O', 0, 11, 1, 1],
+];
+
+// A short handle with a red end, and a lash in alternating light and dark segments hanging from it in an S.
+// Segments join edge to edge, never corner to corner, so the outline cannot turn the lash into a mesh.
+const WHIP = [
+  ['R', 13, 8, 1, 1], ['L', 13, 9, 1, 3],
+  ['l', 13, 12, 2, 1], ['L', 15, 12, 1, 2], ['l', 15, 14, 2, 1], ['L', 16, 15, 1, 2], ['l', 15, 17, 1, 1], ['L', 14, 17, 1, 2],
+];
+const WHIP_CRACK = [
+  ['R', 12, 9, 1, 1], ['L', 12, 10, 2, 1],
+  ['l', 14, 10, 2, 1], ['L', 15, 9, 2, 1], ['l', 17, 9, 1, 2], ['L', 18, 10, 2, 1], ['l', 19, 9, 2, 1], ['w', 21, 8, 1, 1],
+];
+
+// A kite shield in the blade colour: rounded across the top, widest in its upper third, then a long taper to a
+// sharp point. A dark border traces the kite outline inside the black ring, a light stripe and a gold boss mark the
+// face, and a one pixel gap keeps it apart from the body so the silhouette never merges into a grey block.
+const KITE = [
+  ['l', -4, 7, 5, 4], ['l', -3, 11, 3, 2], ['l', -2, 13, 1, 2],
+  ['L', -4, 6, 5, 1], ['L', -5, 7, 1, 4], ['L', 1, 7, 1, 4], ['L', -4, 11, 1, 2], ['L', 0, 11, 1, 2],
+  ['L', -3, 13, 1, 2], ['L', -1, 13, 1, 2], ['L', -2, 15, 1, 2],
+  ['i', -3, 7, 1, 5], ['G', -2, 9, 1, 1], ['k', 2, 10, 1, 1],
+];
+// The same kite outline as the plain shields, framed in black and filled with a dragon's face: horns curling off
+// the top corners, a red brow over gold eyes, a red snout with dark nostrils, and white fangs where the shield
+// narrows. Sharing the kite silhouette keeps the tank's four shields reading as one family.
+const FANGED_SHIELD = [
+  ['O', -4, 7, 5, 4], ['O', -3, 11, 3, 2], ['O', -2, 13, 1, 2],
+  ['v', -4, 6, 5, 1], ['v', -5, 7, 1, 4], ['v', 1, 7, 1, 4], ['v', -4, 11, 1, 2], ['v', 0, 11, 1, 2],
+  ['v', -3, 13, 1, 2], ['v', -1, 13, 1, 2], ['v', -2, 15, 1, 2],
+  ['K', -5, 5, 1, 2], ['K', -6, 4, 1, 1], ['K', 1, 5, 1, 2], ['K', 2, 4, 1, 1],
+  ['R', -4, 7, 5, 1], ['G', -4, 8, 1, 1], ['G', 0, 8, 1, 1],
+  ['R', -3, 9, 3, 3], ['v', -3, 11, 1, 1], ['v', -1, 11, 1, 1],
+  ['w', -3, 13, 1, 1], ['w', -1, 13, 1, 1], ['k', 2, 10, 1, 1],
+];
+const SHIELD_SWORD = [['B', 13, 12, 1, 2], ['G', 12, 11, 3, 1], ['l', 13, 4, 2, 7], ['i', 13, 4, 1, 7], ['l', 13, 3, 1, 1]];
+
+// A greatsword taller than its wielder, with a wide hilt; the hilt colour sets the two tiers apart.
+const greatsword = (hilt) => [
+  ['l', 14, -2, 1, 1], ['l', 13, -1, 3, 12], ['i', 13, -1, 1, 12], ['L', 15, -1, 1, 12],
+  [hilt, 10, 11, 9, 2], [hilt, 10, 10, 1, 1], [hilt, 18, 10, 1, 1], ['B', 14, 13, 1, 3], [hilt, 14, 16, 1, 1],
+];
+const greatswordSwing = (hilt) => [
+  [hilt, 12, 6, 2, 9], ['B', 10, 10, 2, 1], ['l', 14, 8, 7, 3], ['i', 14, 8, 7, 1], ['L', 14, 10, 7, 1], ['l', 21, 9, 1, 1],
+];
+
+// A long dark shaft with a wide curved blade sweeping out over the head.
+const GREAT_SCYTHE = [
+  ['v', 16, -1, 1, 19], ['l', 9, -2, 8, 1], ['L', 10, -1, 6, 1], ['l', 8, -1, 2, 1], ['l', 7, 0, 1, 2], ['i', 9, -2, 6, 1],
+];
+const GREAT_SCYTHE_REAP = [
+  ['v', 13, 10, 8, 1], ['l', 19, 3, 1, 7], ['L', 18, 4, 1, 5], ['l', 18, 2, 2, 1], ['l', 17, 1, 1, 2], ['i', 20, 3, 1, 6],
+];
+
+const GREAT_AXE = [['v', 15, 1, 1, 17], ['l', 16, 0, 4, 6], ['L', 16, 0, 1, 6], ['R', 20, 0, 1, 6], ['l', 13, 1, 2, 2]];
+const GREAT_AXE_CHOP = [['v', 13, 10, 7, 1], ['l', 17, 4, 4, 6], ['L', 17, 4, 4, 1], ['R', 17, 10, 4, 1], ['R', 21, 5, 1, 4]];
+
+// Bows take their wood colour from the blade colour. The string is pulled back and an arrow nocked to attack.
+const SHORTBOW = [['l', 15, 5, 1, 1], ['l', 16, 6, 1, 2], ['l', 17, 8, 1, 4], ['l', 16, 12, 1, 2], ['l', 15, 14, 1, 1], ['B', 17, 9, 1, 2], ['w', 15, 6, 1, 8]];
+const SHORTBOW_DRAW = [
+  ['l', 15, 5, 1, 1], ['l', 16, 6, 1, 2], ['l', 17, 8, 1, 4], ['l', 16, 12, 1, 2], ['l', 15, 14, 1, 1], ['B', 17, 9, 1, 2],
+  ['w', 15, 6, 1, 3], ['w', 14, 9, 1, 2], ['w', 15, 11, 1, 3], ['K', 14, 10, 6, 1], ['i', 20, 10, 1, 1],
+];
+const LONGBOW = [['l', 15, 1, 1, 1], ['l', 16, 2, 1, 2], ['l', 17, 4, 1, 10], ['l', 16, 14, 1, 2], ['l', 15, 16, 1, 1], ['B', 17, 8, 1, 2], ['w', 15, 2, 1, 14]];
+const LONGBOW_DRAW = [
+  ['l', 15, 1, 1, 1], ['l', 16, 2, 1, 2], ['l', 17, 4, 1, 10], ['l', 16, 14, 1, 2], ['l', 15, 16, 1, 1], ['B', 17, 8, 1, 2],
+  ['w', 15, 2, 1, 6], ['w', 14, 8, 1, 2], ['w', 15, 10, 1, 6], ['K', 14, 9, 6, 1], ['i', 20, 9, 1, 1],
+];
+const CROSSBOW = [
+  ['b', 10, 11, 8, 2], ['B', 10, 12, 3, 1], ['l', 17, 8, 1, 9], ['l', 18, 7, 1, 2], ['l', 18, 15, 1, 2], ['w', 16, 9, 1, 7], ['i', 13, 10, 4, 1],
+];
+const CROSSBOW_LOOSE = [
+  ['b', 10, 11, 8, 2], ['B', 10, 12, 3, 1], ['l', 17, 8, 1, 9], ['l', 18, 7, 1, 2], ['l', 18, 15, 1, 2], ['w', 17, 9, 1, 7], ['i', 19, 11, 3, 1],
+];
+// A pale bow cut from crystal, with facets and a glint down the inside.
+const CRYSTAL_BOW = [['c', 16, 0, 1, 2], ['c', 17, 2, 1, 3], ['c', 18, 5, 1, 6], ['c', 17, 11, 1, 3], ['c', 16, 14, 1, 2], ['u', 18, 6, 1, 4], ['u', 17, 3, 1, 1], ['w', 15, 1, 1, 14]];
+const CRYSTAL_BOW_DRAW = [...CRYSTAL_BOW.slice(0, 7), ['w', 15, 1, 1, 6], ['w', 14, 7, 1, 2], ['w', 15, 9, 1, 6], ['u', 14, 8, 7, 1]];
+// A knotted dark bow with green light caught in its knots.
+const GNARLED_BOW = [
+  ['v', 16, -1, 1, 2], ['v', 17, 1, 2, 1], ['v', 18, 2, 1, 4], ['v', 17, 6, 1, 2], ['v', 18, 8, 1, 5], ['v', 17, 13, 1, 2],
+  ['v', 18, 15, 1, 2], ['v', 16, 17, 1, 1], ['g', 18, 4, 1, 1], ['g', 18, 11, 1, 1], ['w', 15, 0, 1, 17],
+];
+const GNARLED_BOW_DRAW = [...GNARLED_BOW.slice(0, 10), ['w', 15, 0, 1, 8], ['w', 14, 8, 1, 2], ['w', 15, 10, 1, 7], ['K', 14, 9, 6, 1], ['g', 20, 9, 1, 1]];
+const GNARLED_GLOW = [['g', 19, 3, 1, 1], ['g', 19, 10, 1, 1], ['g', 17, 0, 1, 1], ['g', 19, 16, 1, 1]];
+
+// Staves carry an orb in the blade colour on a gold collar; casting lifts the staff and sparks the orb.
+const BATTLESTAFF = [['b', 14, 4, 1, 14], ['G', 13, 3, 3, 1], ['l', 13, 0, 3, 3], ['i', 13, 0, 1, 1], ['L', 15, 2, 1, 1]];
+const DARK_STAFF = [['v', 14, 4, 1, 14], ['V', 13, 1, 1, 3], ['V', 15, 1, 1, 3], ['G', 13, 4, 3, 1], ['l', 14, 0, 1, 3], ['i', 14, 0, 1, 1]];
+const FROST_STAFF = [['v', 14, 4, 1, 14], ['G', 13, 4, 3, 1], ['u', 14, -2, 1, 1], ['u', 13, -1, 3, 3], ['w', 13, -1, 1, 1], ['u', 14, 2, 1, 2]];
+const TRIDENT = [
+  ['l', 14, 3, 1, 15], ['G', 13, 3, 3, 1], ['l', 12, 2, 5, 1], ['l', 12, -1, 1, 3], ['l', 14, -2, 1, 4], ['l', 16, -1, 1, 3], ['i', 14, -2, 1, 1],
+];
+const BLOOD_STAFF = [['r', 14, 3, 1, 15], ['v', 12, -1, 1, 2], ['v', 16, -1, 1, 2], ['l', 13, 0, 3, 3], ['i', 13, 0, 1, 1], ['G', 13, 3, 3, 1]];
+const GOLD_STAFF = [
+  ['G', 14, 2, 1, 16], ['G', 12, -1, 5, 1], ['G', 12, -2, 1, 1], ['G', 16, -2, 1, 1], ['v', 13, 0, 3, 2], ['a', 14, 0, 1, 1],
+];
+const SPARKS = [['w', 11, 0, 1, 1], ['w', 17, 0, 1, 1], ['w', 11, 3, 1, 1], ['w', 17, 3, 1, 1]];
+const cast = (staff) => [...staff, ...SPARKS];
+
+const SACK = [['B', 13, 10, 3, 3], ['b', 13, 11, 3, 2], ['m', 13, 9, 3, 1], ['m', 14, 11, 1, 1]];
+// A short stack of gold coins beside the purse, so a flipper reads as money at a glance.
+const COIN_STACK = [['G', 16, 12, 2, 3], ['O', 16, 13, 2, 1], ['w', 16, 12, 1, 1]];
+
+// Each weapon has a resting pose and a swung, drawn or cast pose, shown while attackAnim is under 0.15 seconds.
+export const WEAPONS = {
+  scimitar: { idle: SCIMITAR, attack: SCIMITAR_SLASH },
+  'hooked-scimitar': { idle: [...SCIMITAR, ...HOOK], attack: [...SCIMITAR_SLASH, ...HOOK_SLASH] },
+  'stone-maul': { idle: STONE_MAUL, attack: STONE_MAUL_SMASH },
+  shortbow: { idle: SHORTBOW, attack: SHORTBOW_DRAW },
+  longbow: { idle: LONGBOW, attack: LONGBOW_DRAW },
+  crossbow: { idle: CROSSBOW, attack: CROSSBOW_LOOSE },
+  'crystal-bow': { idle: CRYSTAL_BOW, attack: CRYSTAL_BOW_DRAW },
+  'gnarled-greatbow': { idle: GNARLED_BOW, attack: GNARLED_BOW_DRAW },
+  'gnarled-greatbow-glow': { idle: [...GNARLED_BOW, ...GNARLED_GLOW], attack: [...GNARLED_BOW_DRAW, ...GNARLED_GLOW] },
+  battlestaff: { idle: BATTLESTAFF, attack: cast(BATTLESTAFF) },
+  'dark-staff': { idle: DARK_STAFF, attack: cast(DARK_STAFF) },
+  'frost-staff': { idle: FROST_STAFF, attack: cast(FROST_STAFF) },
+  trident: { idle: TRIDENT, attack: cast(TRIDENT) },
+  'blood-staff': { idle: BLOOD_STAFF, attack: cast(BLOOD_STAFF) },
+  'gold-staff': { idle: GOLD_STAFF, attack: cast(GOLD_STAFF) },
+  'kite-sword': { idle: [...KITE, ...SHIELD_SWORD], attack: [...KITE, ...LONGSWORD_THRUST] },
+  'fanged-shield-sword': { idle: [...FANGED_SHIELD, ...SHIELD_SWORD], attack: [...FANGED_SHIELD, ...LONGSWORD_THRUST] },
+  longsword: { idle: LONGSWORD, attack: LONGSWORD_THRUST },
+  'longsword-parrying': { idle: [...PARRYING_BLADE, ...LONGSWORD], attack: [...PARRYING_BLADE, ...LONGSWORD_THRUST] },
+  'segmented-whip': { idle: WHIP, attack: WHIP_CRACK },
+  'whip-round-shield': { idle: [...ROUND_SHIELD, ...WHIP], attack: [...ROUND_SHIELD, ...WHIP_CRACK] },
+  greatsword: { idle: greatsword('L'), attack: greatswordSwing('L') },
+  'greatsword-gold': { idle: greatsword('G'), attack: greatswordSwing('G') },
+  'great-scythe': { idle: GREAT_SCYTHE, attack: GREAT_SCYTHE_REAP },
+  'great-axe': { idle: GREAT_AXE, attack: GREAT_AXE_CHOP },
   'coin-bag': {
-    idle: SACK,
-    attack: [...SACK, ['m', 14, 5, 2, 2], ['w', 14, 5, 1, 1], ['a', 13, 3, 1, 1], ['a', 16, 4, 1, 1]],
+    idle: [...SACK, ...COIN_STACK],
+    attack: [...SACK, ...COIN_STACK, ['m', 14, 5, 2, 2], ['w', 14, 5, 1, 1], ['a', 13, 3, 1, 1], ['a', 16, 4, 1, 1]],
   },
 };
 
@@ -251,13 +342,16 @@ const PAULDRONS = [['m', 2, 8, 2, 2], ['m', 12, 8, 2, 2], ['n', 2, 8, 2, 1], ['n
 const FLAIR = [[], [BUCKLE], [BUCKLE, ...PAULDRONS], [BUCKLE, ...PAULDRONS, ['a', 7, 9, 2, 2]]];
 
 function towerPalette(colours) {
+  const blade = colours.blade ?? colours.metal;
   return {
     p: colours.primary, P: darker(colours.primary), q: lighter(colours.primary, 0.25),
     s: colours.secondary, S: darker(colours.secondary),
     m: colours.metal, M: darker(colours.metal, 0.35), n: lighter(colours.metal, 0.4),
+    l: blade, L: darker(blade, 0.35), i: lighter(blade, 0.45),
     a: colours.accent, A: darker(colours.accent, 0.35),
     k: '#e0b080', K: '#b88458', e: INK, h: '#4a2f1a', b: '#8a5a2b', B: '#5c3d1e', w: '#f4efe0', H: '#3a2a1a',
     R: '#c0392b', G: '#e6c84f', U: '#2f6fb0', N: '#3e9a4a', V: '#7a3fa0', O: '#e8702a',
+    v: '#1f1a24', g: '#7cff6a', u: '#9fe8ff', c: '#d9f6fa', r: '#5a1018',
   };
 }
 
@@ -281,7 +375,10 @@ function buildTower(type, tier, attacking) {
 }
 
 /** Size of a tower sprite and where its feet and centre sit, in screen pixels. */
-export const TOWER_SPRITE = { width: TOWER_BUFFER.width * SCALE, height: TOWER_BUFFER.height * SCALE, feet: 40 };
+// The feet are the bottom of the 18 row character, wherever the buffer puts it.
+export const TOWER_SPRITE = {
+  width: TOWER_BUFFER.width * SCALE, height: TOWER_BUFFER.height * SCALE, feet: (TOWER_BUFFER.originY + 18) * SCALE,
+};
 
 export function towerSprite(type, tier, attacking = false) {
   const key = `${type}|${tier}|${attacking}`;

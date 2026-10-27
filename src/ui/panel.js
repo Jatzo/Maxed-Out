@@ -1,7 +1,7 @@
 // The side panel for play: wave controls, the shop of nine towers and the selected tower.
 // It only reads game state. Every change goes back through the handlers it is given.
 import { RULES, TOWERS, TOWER_ORDER } from '../core/data.js';
-import { towerSprite } from '../render/sprites.js';
+import { towerSprite, TOWER_SPRITE } from '../render/sprites.js';
 
 const SPEEDS = [1, 2, 4];
 const TARGETING = [['first', 'First'], ['last', 'Last'], ['strong', 'Strong'], ['close', 'Close']];
@@ -48,7 +48,7 @@ export function createPanel(root, handlers) {
   const message = el('p', { class: 'message', role: 'status', text: DEFAULT_MESSAGE });
 
   const shopButtons = TOWER_ORDER.map((type, index) => {
-    const icon = el('canvas', { width: 48, height: 44, 'aria-hidden': 'true' });
+    const icon = el('canvas', { width: TOWER_SPRITE.width, height: TOWER_SPRITE.height, 'aria-hidden': 'true' });
     drawIcon(icon, type);
     const button = el(
       'button',

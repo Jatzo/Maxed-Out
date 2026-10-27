@@ -403,7 +403,7 @@ export function createRenderer(canvas) {
       ctx.strokeRect(selected.col * TILE + 1, selected.row * TILE + 1, TILE - 2, TILE - 2);
     }
 
-    for (const tower of [...state.towers].sort((a, b) => a.y - b.y)) {
+    for (const tower of [...state.towers].sort((a, b) => a.y - b.y || a.x - b.x)) {
       drawTower(ctx, tower.type, tower.tier, tower.x, tower.y, {
         attacking: tower.attackAnim < 0.15,
         flip: Math.cos(tower.angle) < 0,
