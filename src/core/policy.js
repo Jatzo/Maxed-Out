@@ -33,17 +33,17 @@ export function createPolicy(genome) {
   return { act };
 }
 
-// A hand-built mixed strategy. Rangers and mages stand in the middle of the path's loops (slots 0, 33 to 37),
-// where their reach covers several stretches of path; melee towers stand on inside corners (slots 2 to 5, 11,
-// 13), the only tiles where a short reach touches two stretches. The max builds arrive from about wave 20.
+// A hand-built mixed strategy. A ranger and the max builds stand in the pocket between the last climb and the castle
+// gate (slots 0 to 3) and inside the left-hand loop (slots 9 to 20), where their reach covers several stretches of
+// path; melee towers stand on inside corners (slots 4 to 7, 11, 13). Four flippers pay for the max rangers that
+// carry the late waves.
 const gene = (type, slot) => ({ type, slot });
 export const REFERENCE_GENOME = [
-  gene('pure', 2), gene('ranger', 0), gene('pure', 3), gene('ranger', 0), gene('mage', 34), gene('tank', 4),
-  gene('zerker', 5), gene('ranger', 33), gene('mage', 34), gene('ranger', 0), gene('ranger', 33), gene('zerker', 5),
-  gene('mage', 35), gene('mage', 34), gene('ranger', 33), gene('zerker', 11), gene('mage', 35), gene('tank', 4),
-  gene('zerker', 5), gene('ranger', 0), gene('mage', 34), gene('zerker', 11), gene('maxRanger', 36),
-  gene('mage', 35), gene('tank', 4), gene('maxMage', 37), gene('maxRanger', 36), gene('ranger', 33),
-  gene('maxMelee', 13), gene('maxMage', 37), gene('maxRanger', 36), gene('maxMage', 37), gene('maxMelee', 13),
-  gene('maxRanger', 36), gene('maxMage', 37), gene('maxMelee', 13), gene('maxRanger', 32), gene('maxMage', 38),
-  gene('maxRanger', 32), gene('maxMelee', 13),
+  gene('ranger', 0), gene('pure', 4), gene('pure', 5), gene('flipper', 54), gene('mage', 31), gene('zerker', 7),
+  gene('flipper', 55), gene('tank', 6), gene('ranger', 0), gene('mage', 31), gene('flipper', 50), gene('zerker', 7),
+  gene('maxRanger', 9), gene('flipper', 51), gene('maxRanger', 14), gene('mage', 32), gene('maxRanger', 16), gene('maxRanger', 9),
+  gene('maxRanger', 17), gene('maxRanger', 14), gene('maxMage', 3), gene('maxRanger', 19), gene('maxRanger', 16), gene('maxRanger', 20),
+  gene('maxRanger', 17), gene('maxMage', 3), gene('maxRanger', 9), gene('maxRanger', 19), gene('zerker', 11), gene('maxRanger', 14),
+  gene('maxRanger', 20), gene('maxMage', 3), gene('maxRanger', 16), gene('maxRanger', 17), gene('maxRanger', 19), gene('maxRanger', 20),
+  gene('maxMelee', 13), gene('maxMage', 3), gene('maxMelee', 13), gene('maxMelee', 13),
 ];

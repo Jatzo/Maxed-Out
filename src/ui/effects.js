@@ -49,7 +49,8 @@ export function createEffects() {
           add({ kind: 'frost', x, y, life: 0.6 });
           break;
         case 'spell':
-          add({ kind: 'ring', x, y, life: 0.35, colour: '#e3d4ff', radius: amount || 14 });
+          if (event.damageType === 'ranged') add({ kind: 'blast', x, y, life: 0.4, radius: amount || 14 });
+          else add({ kind: 'ring', x, y, life: 0.35, colour: '#e3d4ff', radius: amount || 14 });
           break;
         case 'place':
           add({ kind: 'puff', x, y: y + 8, life: 0.45 });
@@ -120,6 +121,24 @@ export function createEffects() {
             const reach = 4 + t * 24;
             ctx.fillRect(Math.round(x + Math.cos(angle) * reach) - 1, Math.round(y + Math.sin(angle) * reach) - 1, 3, 3);
           }
+          break;
+        }
+        // A bomb's burst: an orange flash that shrinks while a grey smoke ring spreads to the edge of the splash.
+        case 'blast': {
+          ctx.globalAlpha = 1 - t;
+          ctx.fillStyle = '#f08a30';
+          ctx.beginPath();
+          ctx.arc(x, y, Math.max(2, effect.radius * 0.6 * (1 - t)), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffe08a';
+          ctx.beginPath();
+          ctx.arc(x, y, Math.max(1, effect.radius * 0.3 * (1 - t)), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#8a8680';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(x, y, 4 + t * (effect.radius - 4), 0, Math.PI * 2);
+          ctx.stroke();
           break;
         }
         case 'ring': {

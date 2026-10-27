@@ -26,6 +26,8 @@ const RULES = [
   },
   { reason: 'banned word', pattern: /(?<![.\w])unlock(?!\s*:)\w*/i, wordRule: true },
   { reason: 'banned word', pattern: /\bAI\b/, wordRule: true },
+  // The map and weapons may look like the game's, but its place names stay out of every shipped file.
+  { reason: 'game place name', pattern: /\b(?:lumbridge|varrock|falador|draynor|gielinor)\w*/i, wordRule: true },
 ];
 
 function listFiles(folder) {

@@ -299,6 +299,16 @@ const GOLD_STAFF = [
 const SPARKS = [['w', 11, 0, 1, 1], ['w', 17, 0, 1, 1], ['w', 11, 3, 1, 1], ['w', 17, 3, 1, 1]];
 const cast = (staff) => [...staff, ...SPARKS];
 
+// A small round critter in the blade colour, with ears and eyes, held ready to throw; a pouch of spares sits at the
+// hip. The throw raises the arm and lifts the critter above the shoulder.
+const critter = (x, y) => [
+  ['l', x, y + 1, 4, 3], ['l', x + 1, y + 4, 2, 1], ['L', x, y, 1, 1], ['L', x + 3, y, 1, 1], ['i', x, y + 1, 1, 1],
+  ['e', x + 1, y + 2, 1, 1], ['e', x + 2, y + 2, 1, 1],
+];
+const BOMB_POUCH = [['B', 11, 12, 3, 3], ['b', 11, 13, 3, 2], ['L', 11, 11, 1, 1], ['L', 13, 11, 1, 1]];
+const BOMB_READY = [...BOMB_POUCH, ...critter(13, 8)];
+const BOMB_THROW = [...BOMB_POUCH, ['k', 13, 6, 1, 3], ...critter(14, 2), ['w', 18, 1, 2, 1], ['w', 18, 3, 1, 1]];
+
 const SACK = [['B', 13, 10, 3, 3], ['b', 13, 11, 3, 2], ['m', 13, 9, 3, 1], ['m', 14, 11, 1, 1]];
 // A short stack of gold coins beside the purse, so a flipper reads as money at a glance.
 const COIN_STACK = [['G', 16, 12, 2, 3], ['O', 16, 13, 2, 1], ['w', 16, 12, 1, 1]];
@@ -330,6 +340,7 @@ export const WEAPONS = {
   'greatsword-gold': { idle: greatsword('G'), attack: greatswordSwing('G') },
   'great-scythe': { idle: GREAT_SCYTHE, attack: GREAT_SCYTHE_REAP },
   'great-axe': { idle: GREAT_AXE, attack: GREAT_AXE_CHOP },
+  'bomb-throw': { idle: BOMB_READY, attack: BOMB_THROW },
   'coin-bag': {
     idle: [...SACK, ...COIN_STACK],
     attack: [...SACK, ...COIN_STACK, ['m', 14, 5, 2, 2], ['w', 14, 5, 1, 1], ['a', 13, 3, 1, 1], ['a', 16, 4, 1, 1]],

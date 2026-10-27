@@ -1,4 +1,4 @@
-// The side panel for play: wave controls, the shop of nine towers and the selected tower.
+// The side panel for play: wave controls, the shop of towers and the selected tower.
 // It only reads game state. Every change goes back through the handlers it is given.
 import { RULES, TOWERS, TOWER_ORDER } from '../core/data.js';
 import { towerSprite, TOWER_SPRITE } from '../render/sprites.js';
@@ -52,11 +52,11 @@ export function createPanel(root, handlers) {
     drawIcon(icon, type);
     const button = el(
       'button',
-      { class: 'shop-item', type: 'button', 'aria-keyshortcuts': String(index + 1) },
+      { class: 'shop-item', type: 'button', 'aria-keyshortcuts': String((index + 1) % 10) },
       icon,
       el('span', { class: 'shop-name', text: TOWERS[type].name }),
       el('span', { class: 'shop-cost', text: `${TOWERS[type].cost} gold` }),
-      el('span', { class: 'shop-key', 'aria-hidden': 'true', text: String(index + 1) }),
+      el('span', { class: 'shop-key', 'aria-hidden': 'true', text: String((index + 1) % 10) }),
     );
     button.addEventListener('click', () => handlers.pick(type));
     return [type, button];

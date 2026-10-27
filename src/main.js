@@ -367,8 +367,9 @@ window.addEventListener('keydown', (event) => {
     ui.placing = null;
     ui.selectedId = null;
     panel.say('');
-  } else if (/^[1-9]$/.test(event.key)) {
-    actions.pick(TOWER_ORDER[Number(event.key) - 1]);
+  } else if (/^[0-9]$/.test(event.key)) {
+    // Keys 1 to 9 pick the first nine towers and 0 picks the tenth, as on the number row.
+    actions.pick(TOWER_ORDER[(Number(event.key) + 9) % 10]);
   } else if (event.key === ' ' && !onControl) {
     event.preventDefault();
     actions.startWave();

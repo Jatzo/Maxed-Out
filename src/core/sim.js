@@ -302,6 +302,7 @@ export function createGame(seed, { recordEvents = true } = {}) {
   }
 
   function projectileKind(tower, work, stats) {
+    if (tower.type === 'bomber') return 'bomb';
     if (damageTypeOf(tower) === 'ranged') return tower.type === 'ranger' && tower.tier >= 2 ? 'bolt' : 'arrow';
     if (stats.chain) return 'storm';
     if (stats.freeze) return 'frost';
@@ -367,7 +368,8 @@ export function createGame(seed, { recordEvents = true } = {}) {
     if (stats.pierce > 1) for (const enemy of enemiesInLine(target, projectile.angle, stats.pierce - 1)) struck.add(enemy);
     if (stats.splash) for (const enemy of enemiesNear(target.x, target.y, stats.splash * TILE)) struck.add(enemy);
 
-    if (damageType === 'magic' && (stats.splash || stats.chain)) {
+    // Any splash shows where it landed: a spell ring for magic, an explosion for thrown bombs.
+    if (stats.splash || stats.chain) {
       emit('spell', target.x, target.y, { amount: (stats.splash ?? 0) * TILE, damageType, towerId: tower.id });
     }
     for (const enemy of struck) damageEnemy(enemy, stats.damage, damageType, tower, stats.bossMultiplier);

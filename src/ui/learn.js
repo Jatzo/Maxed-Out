@@ -4,7 +4,8 @@ import { GA, TOWERS } from '../core/data.js';
 import { CHART_SERIES, drawChart } from './chart.js';
 import { el } from './panel.js';
 
-const STORAGE_KEY = 'maxedout.ga.v1';
+// Saved build orders name slots on one map, so the key changes whenever the map does.
+const STORAGE_KEY = 'maxedout.ga.v2';
 
 function readSaved() {
   try {

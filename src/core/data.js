@@ -23,36 +23,38 @@ export const RULES = {
   modifierBountyMultiplier: 1.5,
 };
 
-// Terrain: '.' grass, '#' path, '=' bridge, '~' water, 'T' tree, 'R' rock, 'C' castle.
-// Only grass is buildable.
+// Terrain: '.' grass, '#' path, '=' bridge, '~' water, 'T' tree, 'R' rock, 'C' castle wall, 'K' castle tower,
+// 'Y' castle courtyard, 'H' church, 'S' shop, 'F' fence, 'm' marsh. Only grass is buildable. The top two rows are
+// trees and rocks because the HUD covers them.
 export const MAP = {
-  name: 'Mill Vale',
+  name: 'Millford',
   terrain: [
-    'TTTT....TT....TT...~~....TTTTT',
-    'TT.......T...T.....~~........T',
-    '................R..~~.........',
-    '######.......R.....~~.........',
-    '.....#.............~~..#####..',
-    'T....#.R...........~~..#...#..',
-    'TT...#.....#######..~~.#...#.T',
-    'T....#.....#.....#..~~.#...#.T',
-    '.....#.....#.....#..~~.#.T.#..',
-    '.....#...R.#.....#..~~.#...#CC',
-    '..####.....#..T..#..~~.#R..#CC',
-    '..#........#.....#..~~.#...#CC',
-    '..#.....T..#.....#..~~.#...###',
-    '..#.R......#.R...#.~~..#....CC',
-    '..#........#.....##==###....CC',
-    '..#........#.......~~.......CC',
-    '..##########.......~~.....R...',
-    '...................~~.........',
-    'T......T.......T...~~....T....',
-    'TT....TT......TT...~~...T.TT..',
+    'RTTTTRTTTTRTTTTRTTT~~TTTTRTTTT',
+    'TRTTTTRTTTTRTTTTRTT~~RTTTTRTTT',
+    '............HHHHR..~~.......R.',
+    '######......HHHH...~~..####..T',
+    '.....#......HHHH...~~..#..#...',
+    'T....#.R...........~~..#..#...',
+    'RT...#.....#######..~~.#KC#CCK',
+    'T....#.....#.....#..~~.#CYYYYC',
+    '.....#.....#.....#..~~.#CYYYYC',
+    '.....#...R.#.....#..~~.#CYYYYC',
+    '..####.....#..R..#..~~.#CYYYYC',
+    '..#........#.....#..~~.#CYYYYC',
+    '..#.....T..#.....#..~~.#CYYYYC',
+    '..#.T......#.T...#.~~..#CYYYYC',
+    '..#........#.....##==###CYYYYC',
+    '..#........#.......~~...KCCCCK',
+    '..##########.......~~.........',
+    '.............SSS...~~...FFFFFF',
+    'mmmmm........SSS.T.~~...F.....',
+    'mmmmmmmmmm......T..~~...F.....',
   ],
-  // Path corners in tile coordinates. Enemies walk tile centres; the first and last points sit off the map.
+  // Path corners in tile coordinates. Enemies walk tile centres from off the west edge to the castle gate, the last
+  // point, in the middle of the castle's north wall.
   waypoints: [
     [-1, 3], [5, 3], [5, 10], [2, 10], [2, 16], [11, 16], [11, 6], [17, 6],
-    [17, 14], [23, 14], [23, 4], [27, 4], [27, 12], [30, 12],
+    [17, 14], [23, 14], [23, 3], [26, 3], [26, 6],
   ],
 };
 
@@ -259,9 +261,31 @@ export const TOWERS = {
           { primary: '#1a1a3a', secondary: '#7fd6f0', metal: '#e6c84f', accent: '#f4f0a0' }) },
     ],
   },
+  bomber: {
+    name: 'Bomber',
+    blurb: 'Throws little round critters that burst on landing. Hits a crowd, but armour soaks every blast.',
+    cost: 450,
+    damageType: 'ranged',
+    tiers: [
+      { name: 'Pebble bombs', cost: 0, stats: { damage: 6, interval: 1.0, range: 3.5, splash: 0.75 },
+        outfit: outfit('coif', 'leather', 'chaps', 'none', 'bomb-throw',
+          { primary: '#5a6b3a', secondary: '#3a4a26', metal: '#9aa0a6', accent: '#8a5a2b', blade: '#9a9a92' }) },
+      { name: 'Ember bombs', cost: 300, stats: { damage: 9, interval: 0.9, range: 3.5, splash: 1.0 },
+        outfit: outfit('coif', 'hide', 'chaps', 'none', 'bomb-throw',
+          { primary: '#4a5a2e', secondary: '#2f3a1e', metal: '#9aa0a6', accent: '#c0392b', blade: '#c0392b' }) },
+      { name: 'Cinder bombs', cost: 800, stats: { damage: 16, interval: 0.9, range: 4, splash: 1.25 },
+        outfit: outfit('hood', 'hide', 'chaps', 'cape', 'bomb-throw',
+          { primary: '#3a4a26', secondary: '#26301a', metal: '#9aa0a6', accent: '#e8702a', blade: '#2b2b30' }) },
+      { name: 'Fuse master', cost: 1800, stats: { damage: 26, interval: 0.8, range: 4, splash: 1.5 },
+        outfit: outfit('hood', 'hide', 'chaps', 'cape', 'bomb-throw',
+          { primary: '#2f3a1e', secondary: '#c9a46a', metal: '#d4a017', accent: '#f0b030', blade: '#1f1a24' }) },
+    ],
+  },
 };
 
-export const TOWER_ORDER = ['pure', 'ranger', 'mage', 'tank', 'zerker', 'flipper', 'maxMelee', 'maxRanger', 'maxMage'];
+export const TOWER_ORDER = [
+  'pure', 'ranger', 'mage', 'tank', 'zerker', 'flipper', 'maxMelee', 'maxRanger', 'maxMage', 'bomber',
+];
 
 // size: sprite class the renderer draws ('small' 16 px, 'medium' 24 px, 'large' 32 px, 'boss' 48 px).
 // cost: the wave generator's spending unit, equal to bounty.
@@ -318,7 +342,8 @@ export const WAVE_FORMULA = {
   countBase: 20,
   countGrowth: 1.04,
   countCap: 120,
-  hpGrowth: 1.06,
+  // The castle map's path is 78 tiles, 8 shorter than the first map's, so late waves grow a little more slowly.
+  hpGrowth: 1.045,
   gapStart: 0.6,
   gapMin: 0.2,
   gapShrinkPerWave: 0.012,

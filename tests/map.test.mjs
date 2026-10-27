@@ -2,17 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAP, TILE } from '../src/core/data.js';
 import { buildMap, isBuildable } from '../src/core/map.js';
+import { REFERENCE_GENOME } from '../src/core/policy.js';
 
 const map = buildMap();
 
-test('the path starts and ends off the map at tile centres', () => {
+test('the path starts off the west edge and ends at the castle gate, at tile centres', () => {
   assert.deepEqual(map.path[0], { x: -TILE / 2, y: 3 * TILE + TILE / 2 });
-  assert.deepEqual(map.path[map.path.length - 1], { x: 30 * TILE + TILE / 2, y: 12 * TILE + TILE / 2 });
+  assert.deepEqual(map.path[map.path.length - 1], { x: 26 * TILE + TILE / 2, y: 6 * TILE + TILE / 2 });
   assert.equal(map.path.length, MAP.waypoints.length);
 });
 
-test('the path length is the sum of its segments, 86 tiles for Mill Vale', () => {
-  assert.equal(map.pathLength, 86 * TILE);
+test('the path length is the sum of its segments, 78 tiles for Millford', () => {
+  assert.equal(map.pathLength, 78 * TILE);
 });
 
 test('the map copies the size and terrain from the data', () => {
@@ -51,7 +52,12 @@ test('slot scores count the path length within two and a half tiles', () => {
   assert.ok(Math.abs(covered - best.score) <= 8, `counted ${covered}, map says ${best.score}`);
 });
 
-test('isBuildable allows grass and refuses path, water, trees, rocks, castle and off-map tiles', () => {
+test('isBuildable allows grass and refuses path, water, trees, rocks, buildings, fences, marsh and off-map tiles', () => {
+  assert.equal(isBuildable(map, 13, 3), false);
+  assert.equal(isBuildable(map, 14, 17), false);
+  assert.equal(isBuildable(map, 26, 17), false);
+  assert.equal(isBuildable(map, 0, 19), false);
+  assert.equal(isBuildable(map, 24, 6), false);
   assert.equal(isBuildable(map, 0, 2), true);
   assert.equal(isBuildable(map, 5, 5), false);
   assert.equal(isBuildable(map, 19, 5), false);
@@ -60,4 +66,9 @@ test('isBuildable allows grass and refuses path, water, trees, rocks, castle and
   assert.equal(isBuildable(map, 28, 9), false);
   assert.equal(isBuildable(map, -1, 3), false);
   assert.equal(isBuildable(map, 30, 3), false);
+});
+
+test('every slot the reference build names exists on the map', () => {
+  const highest = Math.max(...REFERENCE_GENOME.map((gene) => gene.slot));
+  assert.ok(highest < map.slots.length, `slot ${highest} but only ${map.slots.length} slots`);
 });

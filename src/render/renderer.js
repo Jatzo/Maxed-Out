@@ -1,6 +1,6 @@
 // Draws a game state onto the 960 x 640 canvas. It reads state and never changes it.
 // The terrain is painted once to an offscreen canvas; only the water shimmer is redrawn each frame.
-import { TILE, TOWERS, ENEMIES, RULES } from '../core/data.js';
+import { MAP, TILE, TOWERS, ENEMIES, RULES } from '../core/data.js';
 import { drawText } from './font.js';
 import { drawTower, drawEnemy, enemyExtent, enemyWidth } from './sprites.js';
 
@@ -153,14 +153,57 @@ function paintCastle(ctx, terrain) {
   }
 }
 
-function paintGate(ctx, row) {
+// Every tile of one character, as a bounding box, so a building drawn over several tiles is painted once.
+function boxOf(terrain, ch) {
+  let left = Infinity, top = Infinity, right = -1, bottom = -1;
+  terrain.forEach((line, row) => [...line].forEach((cell, col) => {
+    if (cell !== ch) return;
+    left = Math.min(left, col); right = Math.max(right, col); top = Math.min(top, row); bottom = Math.max(bottom, row);
+  }));
+  return right < 0 ? null : { x: left * TILE, y: top * TILE, width: (right - left + 1) * TILE, height: (bottom - top + 1) * TILE };
+}
+
+function paintCourtyard(ctx, x, y, random) {
+  ctx.fillStyle = '#8f8b80';
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.fillStyle = '#7a766c';
+  ctx.fillRect(x, y + 15, TILE, 2);
+  ctx.fillRect(x + 15, y, 2, 15);
+  ctx.fillRect(x + 7, y + 17, 2, 15);
+  if (random() < 0.3) {
+    ctx.fillStyle = '#a19c90';
+    ctx.fillRect(x + 2, y + 2, 12, 12);
+  }
+}
+
+// A round tower with a crenellated rim and a dark hatch, standing over the corner of the walls.
+function paintTower(ctx, col, row) {
+  const cx = col * TILE + 16;
+  const cy = row * TILE + 14;
+  disc(ctx, cx + 2, cy + 4, 20, 'rgba(0, 0, 0, 0.25)');
+  disc(ctx, cx, cy, 20, '#6f6f6b');
+  disc(ctx, cx, cy, 16, '#a2a29c');
+  disc(ctx, cx, cy, 6, '#4a4a46');
+  ctx.fillStyle = '#6f6f6b';
+  for (let k = 0; k < 8; k++) {
+    const angle = (k / 8) * Math.PI * 2;
+    ctx.fillRect(Math.round(cx + Math.cos(angle) * 16) - 3, Math.round(cy + Math.sin(angle) * 16) - 3, 6, 6);
+  }
+}
+
+// An arched opening with a raised portcullis, drawn on the path tile where enemies reach the castle.
+function paintGate(ctx, col, row) {
+  const x = col * TILE;
   const y = row * TILE;
-  ctx.fillStyle = '#5a5a56';
-  ctx.fillRect(27 * TILE + 8, y, 3 * TILE - 8, 14);
+  ctx.fillStyle = '#6f6f6b';
+  ctx.fillRect(x - 4, y - 6, TILE + 8, 10);
   ctx.fillStyle = '#9a9a96';
-  ctx.fillRect(27 * TILE + 8, y, 3 * TILE - 8, 10);
-  ctx.fillStyle = '#3a3a38';
-  for (let x = 27 * TILE + 16; x < 30 * TILE; x += 8) ctx.fillRect(x, y + 14, 2, 8);
+  ctx.fillRect(x - 4, y - 6, TILE + 8, 4);
+  ctx.fillStyle = '#2a2622';
+  ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 4);
+  ctx.fillStyle = '#5a5a56';
+  for (let bar = x + 6; bar < x + TILE - 4; bar += 6) ctx.fillRect(bar, y + 4, 2, 10);
+  ctx.fillRect(x + 4, y + 12, TILE - 8, 2);
 }
 
 function paintPennant(ctx, x, y, colour) {
@@ -170,9 +213,101 @@ function paintPennant(ctx, x, y, colour) {
   for (let k = 0; k < 6; k++) ctx.fillRect(x + 2, y - 30 + k * 2, 14 - k * 2, 2);
 }
 
+// A stone church with a slate roof, arched windows and a steeple with a spire at its west end.
+function paintChurch(ctx, box) {
+  const { x, y, width, height } = box;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.fillRect(x + 6, y + 10, width, height - 4);
+  ctx.fillStyle = '#c8c2b0';
+  ctx.fillRect(x + 4, y + 22, width - 8, height - 24);
+  ctx.fillStyle = '#5a5a66';
+  ctx.fillRect(x, y + 10, width, 14);
+  ctx.fillStyle = '#6c6c7a';
+  ctx.fillRect(x, y + 10, width, 4);
+  ctx.fillStyle = '#2f4a6a';
+  for (let wx = x + 30; wx < x + width - 12; wx += 18) {
+    ctx.fillRect(wx, y + 34, 8, 14);
+    ctx.fillRect(wx + 2, y + 32, 4, 2);
+  }
+  ctx.fillStyle = '#4a3b2a';
+  ctx.fillRect(x + width / 2 + 6, y + height - 18, 12, 16);
+  ctx.fillStyle = '#b8b2a0';
+  ctx.fillRect(x + 4, y - 2, 22, height - 2);
+  ctx.fillStyle = '#9a9488';
+  ctx.fillRect(x + 22, y - 2, 4, height - 2);
+  ctx.fillStyle = '#5a5a66';
+  for (let k = 0; k < 6; k++) ctx.fillRect(x + 5 + k * 2, y - 2 - k * 4, 20 - k * 4, 4);
+  ctx.fillStyle = '#e6c84f';
+  ctx.fillRect(x + 14, y - 34, 2, 10);
+  ctx.fillRect(x + 11, y - 30, 8, 2);
+  ctx.fillStyle = '#2a2622';
+  ctx.fillRect(x + 11, y + 14, 8, 10);
+}
+
+// A timber-framed shop with a striped awning over the door and a coin on its sign.
+function paintShop(ctx, box) {
+  const { x, y, width, height } = box;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.fillRect(x + 6, y + 6, width, height - 2);
+  ctx.fillStyle = '#d8cfae';
+  ctx.fillRect(x + 2, y + 8, width - 4, height - 10);
+  ctx.fillStyle = '#6b4a2b';
+  ctx.fillRect(x, y, width, 10);
+  for (let bx = x + 2; bx < x + width; bx += 30) ctx.fillRect(bx, y + 8, 4, height - 10);
+  ctx.fillRect(x + 2, y + height - 6, width - 4, 4);
+  for (let k = 0; k < width; k += 12) {
+    ctx.fillStyle = k % 24 === 0 ? '#c0392b' : '#f4efe0';
+    ctx.fillRect(x + k, y + 18, 12, 10);
+  }
+  ctx.fillStyle = '#4a3b2a';
+  ctx.fillRect(x + width / 2 - 8, y + 34, 16, height - 40);
+  disc(ctx, x + 20, y + 42, 6, '#e6c84f');
+  ctx.fillStyle = '#b8901f';
+  ctx.fillRect(x + 18, y + 40, 4, 4);
+}
+
+// Posts with rails running towards whichever neighbours are also fence.
+function paintFence(ctx, col, row, terrain) {
+  const isFence = (c, r) => terrain[r]?.[c] === 'F';
+  const x = col * TILE;
+  const y = row * TILE;
+  ctx.fillStyle = '#8a5a2b';
+  if (isFence(col - 1, row) || isFence(col + 1, row)) {
+    ctx.fillRect(isFence(col - 1, row) ? x : x + 14, y + 12, isFence(col + 1, row) ? TILE - (isFence(col - 1, row) ? 0 : 14) : 18, 3);
+    ctx.fillRect(isFence(col - 1, row) ? x : x + 14, y + 20, isFence(col + 1, row) ? TILE - (isFence(col - 1, row) ? 0 : 14) : 18, 3);
+  }
+  if (isFence(col, row - 1) || isFence(col, row + 1)) {
+    ctx.fillRect(x + 12, isFence(col, row - 1) ? y : y + 14, 3, isFence(col, row + 1) ? TILE : 18);
+    ctx.fillRect(x + 19, isFence(col, row - 1) ? y : y + 14, 3, isFence(col, row + 1) ? TILE : 18);
+  }
+  ctx.fillStyle = '#5c3d1e';
+  ctx.fillRect(x + 13, y + 8, 6, 18);
+  ctx.fillStyle = '#a0703c';
+  ctx.fillRect(x + 13, y + 8, 6, 2);
+}
+
+function paintMarsh(ctx, x, y, random) {
+  ctx.fillStyle = '#4a5a32';
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.fillStyle = '#3a6a6a';
+  ctx.fillRect(x + 4 + Math.floor(random() * 6) * 2, y + 6 + Math.floor(random() * 4) * 2, 12, 6);
+  ctx.fillStyle = '#5a8a8a';
+  ctx.fillRect(x + 6, y + 8, 4, 2);
+  ctx.fillStyle = '#2f4a22';
+  for (let k = 0; k < 3; k++) {
+    const rx = x + 2 + Math.floor(random() * 14) * 2;
+    ctx.fillRect(rx, y + 16, 2, 12);
+    ctx.fillStyle = '#6b4a2b';
+    ctx.fillRect(rx, y + 14, 2, 4);
+    ctx.fillStyle = '#2f4a22';
+  }
+}
+
+// The forest leaves a gap where the path enters, so the gap follows the first waypoint.
 function paintForestEdge(ctx, random) {
-  const gapTop = 3 * TILE - 16;
-  const gapBottom = 4 * TILE + 16;
+  const entryRow = MAP.waypoints[0][1];
+  const gapTop = entryRow * TILE - 16;
+  const gapBottom = (entryRow + 1) * TILE + 16;
   for (let y = 10; y < HEIGHT + 20; y += 30) {
     if (y > gapTop && y < gapBottom) continue;
     disc(ctx, -2 + Math.floor(random() * 8), y, 20, '#173d1d');
@@ -187,6 +322,7 @@ function buildTerrain(terrain) {
   const ctx = canvas.getContext('2d');
   const random = seededRandom(7);
   const water = [];
+  const towers = [];
   terrain.forEach((line, row) => {
     [...line].forEach((ch, col) => {
       const x = col * TILE;
@@ -198,19 +334,34 @@ function buildTerrain(terrain) {
       } else if (ch === '=') {
         paintBridge(ctx, x, y);
         water.push({ x, y, phase: random() * 6, bridge: true });
-      } else paintGrass(ctx, x, y, random);
+      } else if (ch === 'Y') paintCourtyard(ctx, x, y, random);
+      else if (ch === 'm') paintMarsh(ctx, x, y, random);
+      else {
+        paintGrass(ctx, x, y, random);
+        if (ch === 'F') paintFence(ctx, col, row, terrain);
+        if (ch === 'K') towers.push([col, row]);
+      }
     });
   });
   paintCastle(ctx, terrain);
-  paintGate(ctx, 12);
+  const [gateCol, gateRow] = MAP.waypoints[MAP.waypoints.length - 1];
+  paintGate(ctx, gateCol, gateRow);
+  for (const [col, row] of towers) paintTower(ctx, col, row);
   terrain.forEach((line, row) => {
     [...line].forEach((ch, col) => {
       if (ch === 'T') paintTree(ctx, col * TILE + 16 + Math.floor(random() * 5) - 2, row * TILE + 14, random);
       else if (ch === 'R') paintRock(ctx, col * TILE + 16, row * TILE + 16);
     });
   });
-  paintPennant(ctx, 28 * TILE + 6, 9 * TILE - 8, '#c0392b');
-  paintPennant(ctx, 29 * TILE + 8, 13 * TILE - 8, '#3b5f8a');
+  // Buildings go over the trees so the church's steeple is not hidden by the tree line behind it.
+  const church = boxOf(terrain, 'H');
+  if (church) paintChurch(ctx, church);
+  const shop = boxOf(terrain, 'S');
+  if (shop) paintShop(ctx, shop);
+  // Pennants fly from the two towers on the gate's wall.
+  towers.filter(([, row]) => row === gateRow).forEach(([col], index) => {
+    paintPennant(ctx, col * TILE + 15, gateRow * TILE - 6, index === 0 ? '#c0392b' : '#3b5f8a');
+  });
   paintForestEdge(ctx, random);
   return { canvas, water: water.filter((tile) => !tile.bridge) };
 }
@@ -272,6 +423,24 @@ function drawProjectile(ctx, projectile, alpha, time) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(-2, -1, 8, 2);
       break;
+    // A small round critter, tumbling as it flies, with a lit fuse on its back.
+    case 'bomb': {
+      ctx.rotate(time * 12);
+      ctx.fillStyle = '#6f6a62';
+      ctx.fillRect(-5, -4, 10, 8);
+      ctx.fillRect(-4, -5, 8, 10);
+      ctx.fillStyle = '#9a948a';
+      ctx.fillRect(-3, -4, 4, 3);
+      ctx.fillStyle = '#4a4640';
+      ctx.fillRect(-5, -7, 3, 3);
+      ctx.fillRect(2, -7, 3, 3);
+      ctx.fillStyle = '#1a1410';
+      ctx.fillRect(-3, -1, 2, 2);
+      ctx.fillRect(1, -1, 2, 2);
+      ctx.fillStyle = Math.floor(time * 20) % 2 ? '#f0b030' : '#ff6a20';
+      ctx.fillRect(4, 3, 3, 3);
+      break;
+    }
     case 'storm': {
       const jitter = seededRandom(projectile.id * 31 + Math.floor(time * 18));
       const points = Array.from({ length: 6 }, (_, k) => [-10 + k * 4, (jitter() - 0.5) * 10]);

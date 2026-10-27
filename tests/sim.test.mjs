@@ -69,6 +69,18 @@ function findClosestSpot(game) {
   return { slot: best.slot, distance: best.distance, progress: alongside[Math.floor(alongside.length / 2)].progress };
 }
 
+// A point on the path well out of every short reach from the slot. The path doubles back, so a fixed distance
+// further along can land beside the tower again.
+function farFrom(game, slot, distance = 6 * TILE) {
+  const x = slot.col * TILE + TILE / 2;
+  const y = slot.row * TILE + TILE / 2;
+  for (let progress = 0; progress < game.map.pathLength; progress += 4) {
+    const point = pointAt(game, progress);
+    if (Math.hypot(point.x - x, point.y - y) > distance) return progress;
+  }
+  throw new Error("No point on the path is that far from the slot.");
+}
+
 let enemyCounter = 9000;
 function addEnemy(game, type, progress, overrides = {}) {
   const point = pointAt(game, progress);
@@ -236,7 +248,7 @@ test('slow is halved on bosses and zero for enemies out of reach', () => {
   const { slot, progress } = closestSpot(game);
   build(game, 'tank', slot, 2);
   const dragon = addEnemy(game, 'dragonGreen', progress);
-  const far = addEnemy(game, 'cow', progress + 300);
+  const far = addEnemy(game, 'cow', farFrom(game, slot));
   game.step(DT);
   assert.equal(dragon.slow, 0.5 * RULES.bossSlowFactor);
   assert.equal(far.slow, 0);
@@ -321,7 +333,7 @@ test('a tower ignores enemies out of range', () => {
   const game = waveGame();
   const { slot, progress } = closestSpot(game);
   build(game, 'pure', slot);
-  const far = addEnemy(game, 'cow', progress + 250);
+  const far = addEnemy(game, 'cow', farFrom(game, slot));
   stepFor(game, 1);
   assert.equal(hitsOn(game.drainEvents(), far).length, 0);
   assert.equal(far.hp, HUGE);
@@ -345,7 +357,7 @@ test('a splash spell hits neighbours of the target', () => {
   build(game, 'mage', slot, 2);
   const target = addEnemy(game, 'cow', progress);
   const neighbour = addEnemy(game, 'cow', progress + 20);
-  const faraway = addEnemy(game, 'cow', progress + 200);
+  const faraway = addEnemy(game, 'cow', farFrom(game, slot));
   const events = [];
   stepFor(game, 1.5, () => {
     events.push(...game.drainEvents());
@@ -506,4 +518,26 @@ test('storm crown lightning jumps to an enemy beyond its splash', () => {
   });
   assert.equal(hitsOn(events, target).length, 1);
   assert.ok(hitsOn(events, beyondSplash).length > 0);
+});
+
+test('a bomb hits every enemy in its splash, and armour soaks each blast separately', () => {
+  const game = waveGame();
+  const { slot, progress } = closestSpot(game);
+  build(game, 'bomber', slot);
+  const target = addEnemy(game, 'cow', progress);
+  const unarmoured = addEnemy(game, 'cow', progress - 12);
+  const armoured = addEnemy(game, 'guard', progress - 18);
+  const faraway = addEnemy(game, 'cow', farFrom(game, slot));
+  const events = [];
+  stepFor(game, 0.6, () => {
+    events.push(...game.drainEvents());
+    target.progress = progress;
+    unarmoured.progress = progress - 12;
+    armoured.progress = progress - 18;
+  });
+  assert.deepEqual(hitsOn(events, target).map((event) => event.amount), [6]);
+  assert.deepEqual(hitsOn(events, unarmoured).map((event) => event.amount), [6]);
+  assert.deepEqual(hitsOn(events, armoured).map((event) => event.amount), [2]);
+  assert.equal(hitsOn(events, faraway).length, 0);
+  assert.ok(events.some((event) => event.type === 'spell' && event.damageType === 'ranged'));
 });

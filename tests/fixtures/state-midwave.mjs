@@ -7,8 +7,8 @@ let pathLength = 0;
 for (let i = 1; i < path.length; i++) pathLength += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
 
 const towerSpots = [
-  [4, 5], [7, 3], [3, 8], [6, 12], [9, 14], [13, 8], [15, 4], [16, 9], [9, 7],
-  [22, 8], [25, 6], [26, 12], [22, 12], [24, 16], [12, 18], [3, 14], [18, 16], [13, 5],
+  [4, 5], [7, 3], [3, 8], [6, 12], [9, 14], [13, 8], [16, 4], [16, 9], [9, 7],
+  [22, 8], [28, 4], [22, 10], [22, 12], [24, 16], [12, 18], [3, 14], [18, 16], [13, 5],
 ];
 
 // Gold a tower of this type and tier has cost, so the sell button shows the real refund.

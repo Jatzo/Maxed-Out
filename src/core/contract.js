@@ -55,7 +55,7 @@
 /**
  * @typedef {object} ProjectileState
  * @property {number} id
- * @property {'arrow' | 'bolt' | 'spell-air' | 'spell-water' | 'spell-earth' | 'spell-fire' | 'frost' | 'storm'} kind
+ * @property {'arrow' | 'bolt' | 'spell-air' | 'spell-water' | 'spell-earth' | 'spell-fire' | 'frost' | 'storm' | 'bomb'} kind
  * @property {number} x
  * @property {number} y
  * @property {number} prevX

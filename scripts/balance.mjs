@@ -31,6 +31,7 @@ const STRATEGIES = {
   'pure, no upgrades': () => buyOnly('pure'),
   'pure, upgraded': () => createPolicy(genomeOf('pure', 30)),
   'mage only': () => createPolicy(genomeOf('mage', 30)),
+  'bomber only': () => createPolicy(genomeOf('bomber', 30)),
   reference: () => createPolicy(REFERENCE_GENOME),
   'farmer heavy': () => createPolicy([
     ...genomeOf('flipper', 10),
@@ -103,6 +104,8 @@ target('3b pure with upgrades fails before wave 30', worst(lostWaves('pure, upgr
   `latest loss wave ${worst(lostWaves('pure, upgraded'))}`);
 target('3c farmer heavy fails before wave 30', worst(lostWaves('farmer heavy')) < 30,
   `latest loss wave ${worst(lostWaves('farmer heavy'))}`);
+target('3d bomber only fails before wave 30', worst(lostWaves('bomber only')) < 30,
+  `latest loss wave ${worst(lostWaves('bomber only'))}`);
 
 const timings = [];
 for (let i = 0; i < 3; i++) {
